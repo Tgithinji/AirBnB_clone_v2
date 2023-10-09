@@ -3,10 +3,26 @@
 do_deploy_web_static module
 """
 import os
-from fabric.api import env, put, run
+from fabric.api import env, put, run, local
+from datetime import datetime
+
 
 env.hosts = ["100.26.209.142", "54.158.214.70"]
 env.user = "ubuntu"
+
+
+def do_pack():
+    """
+    This is used to genaerate a .tgz archive
+    """
+    local("mkdir -p versions")
+    created_at = datetime.now().strftime("%Y%m%d%H%M%S")
+    archived_path = "versions/web_static_{}.tgz".format(created_at)
+    archive = local("tar -czvf {} web_static".format(archived_path))
+    if archive.succeeded:
+        return archived_path
+    else:
+        return None
 
 
 def do_deploy(archive_path):
@@ -26,20 +42,20 @@ def do_deploy(archive_path):
         put(archive_file, "/tmp/")
 
         # create release folder
-        run("mkdir -p {}{}".format(remote_path, file_name))
+        run("sudo mkdir -p {}{}".format(remote_path, file_name))
 
         # uncompress archive
-        run("tar -zxf /tmp/{} -C {}{}".format(
+        run("sudo tar -zxf /tmp/{} -C {}{}".format(
             archive_file, remote_path, file_name))
 
         # delete the archive from webservers
-        run("rm -rf /tmp/{}".format(archive_file))
+        run("sudo rm -rf /tmp/{}".format(archive_file))
 
         # delete symbolic link
-        run("rm -rf /data/web_static/current")
+        run("sudo rm -rf /data/web_static/current")
 
         # create new symbolic link
-        run("ln -s {}{} /data/web_static/current".format(
+        run("sudo ln -s {}{} /data/web_static/current".format(
             remote_path, file_name))
         return True
 
