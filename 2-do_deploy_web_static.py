@@ -32,14 +32,15 @@ def do_deploy(archive_path):
     # check if file path exists
     if not os.path.exists(archive_path):
         return False
+
     # get archive file without extension
-    archive_file = os.path.basename(archive_path)
+    archive_file = archive_path.split('/')[1]
     file_name = archive_file.split('.')[0]
     remote_path = "/data/web_static/releases/"
 
     try:
         # upload the archive to remoteserver
-        put(archive_file, "/tmp/")
+        put(archive_path, "/tmp/")
 
         # create release folder
         run("sudo mkdir -p {}{}".format(remote_path, file_name))
@@ -49,7 +50,12 @@ def do_deploy(archive_path):
             archive_file, remote_path, file_name))
 
         # delete the archive from webservers
-        run("sudo rm -rf /tmp/{}".format(archive_file))
+        run("sudo rm /tmp/{}".format(archive_file))
+
+        run("sudo mv {}{}/web_static/* {}{}".format(
+            remote_path, file_name, remote_path, file_name))
+
+        run("sudo rm -rf {}{}/web_static".format(remote_path, file_name))
 
         # delete symbolic link
         run("sudo rm -rf /data/web_static/current")
@@ -57,6 +63,7 @@ def do_deploy(archive_path):
         # create new symbolic link
         run("sudo ln -s {}{} /data/web_static/current".format(
             remote_path, file_name))
+        print("New version deployed!")
         return True
 
     except Exception:
