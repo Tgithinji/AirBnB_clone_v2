@@ -30,7 +30,7 @@ class DBStorage:
         host = os.getenv('HBNB_MYSQL_HOST')
         db = os.getenv('HBNB_MYSQL_DB')
         hbnb_env = os.getenv('HBNB_ENV')
-        url = (f'mysql+mysqldb://{user}:{passwd}@{host}/{db}')
+        url = f'mysql+mysqldb://{user}:{passwd}@{host}/{db}'
         self.__engine = create_engine(url, pool_pre_ping=True)
 
         if hbnb_env == "test":
@@ -86,3 +86,9 @@ class DBStorage:
             bind=self.__engine,
             expire_on_commit=False))
         self.__session = Session()
+
+    def close(self):
+        """
+        close the storage
+        """
+        self.__session.close()
